@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - research/job-market-2000-20260710
+  pull_request:
+    branches:
+      - main
   workflow_dispatch:
 
 permissions:
@@ -12,7 +15,7 @@ permissions:
 jobs:
   research:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 120
     steps:
       - name: Checkout temporary research branch
         uses: actions/checkout@v4
@@ -22,18 +25,20 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Install parsers
+      - name: Install document and data parsers
         run: |
+          sudo apt-get update
+          sudo apt-get install -y antiword
           python -m pip install --upgrade pip
-          pip install requests beautifulsoup4 openpyxl lxml
+          pip install requests beautifulsoup4 openpyxl lxml pandas xlrd python-docx pypdf
 
-      - name: Collect and verify company/job records
-        run: python research/job_market_2000.py
+      - name: Rebuild, verify, and match recruitment records
+        run: python research/verify_2059.py
 
-      - name: Upload research result
+      - name: Upload reproducible research result
         uses: actions/upload-artifact@v4
         with:
-          name: cs-job-market-2000
+          name: cs-job-market-2059-verification
           path: research_output/
           if-no-files-found: error
           retention-days: 7
