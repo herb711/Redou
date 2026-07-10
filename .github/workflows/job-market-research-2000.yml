@@ -15,7 +15,7 @@ permissions:
 jobs:
   research:
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 90
     steps:
       - name: Checkout temporary research branch
         uses: actions/checkout@v4
@@ -33,7 +33,7 @@ jobs:
           pip install requests beautifulsoup4 openpyxl lxml pandas xlrd python-docx pypdf
 
       - name: Rebuild, verify, and match recruitment records
-        run: python research/verify_2059.py
+        run: python research/verify_2059_fast.py
 
       - name: Upload reproducible research result
         uses: actions/upload-artifact@v4
