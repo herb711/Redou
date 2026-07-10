@@ -15,7 +15,7 @@ permissions:
 jobs:
   research:
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 120
     steps:
       - name: Checkout temporary research branch
         uses: actions/checkout@v4
@@ -25,15 +25,16 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Install document and data parsers
+      - name: Install document, data, and browser parsers
         run: |
           sudo apt-get update
           sudo apt-get install -y antiword
           python -m pip install --upgrade pip
-          pip install requests beautifulsoup4 openpyxl lxml pandas xlrd python-docx pypdf
+          pip install requests beautifulsoup4 openpyxl lxml pandas xlrd python-docx pypdf playwright
+          python -m playwright install chromium
 
       - name: Rebuild, verify, and match recruitment records
-        run: python research/verify_2059_fast.py
+        run: python research/verify_2059_browser.py
 
       - name: Upload reproducible research result
         uses: actions/upload-artifact@v4
