@@ -1,9 +1,9 @@
 name: commercial-platform-probe
 
 on:
-  push:
+  pull_request:
     branches:
-      - research/job-market-2000-20260710
+      - main
   workflow_dispatch:
 
 permissions:
