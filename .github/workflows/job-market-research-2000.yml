@@ -1,13 +1,118 @@
 name: job-market-research-2000
 
 on:
+  push:
+    branches:
+      - research/job-market-2000-20260710
   workflow_dispatch:
+
+concurrency:
+  group: job-market-research-2000
+  cancel-in-progress: true
 
 permissions:
   contents: read
 
 jobs:
-  paused:
+  build_pool:
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     steps:
-      - run: echo "Workflow temporarily paused while sharded research jobs are prepared."
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: pip install requests beautifulsoup4 pandas openpyxl python-docx pypdf lxml
+      - run: python research/stage_build_pool.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pool
+          path: stage_output/
+          if-no-files-found: error
+
+  business_verify:
+    needs: build_pool
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0,1,2,3,4,5,6,7]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - uses: actions/download-artifact@v4
+        with:
+          name: pool
+          path: stage_input
+      - run: pip install requests beautifulsoup4 pandas openpyxl python-docx pypdf lxml
+      - run: python research/stage_verify_business.py --shard ${{ matrix.shard }} --total-shards 8
+      - uses: actions/upload-artifact@v4
+        with:
+          name: business-${{ matrix.shard }}
+          path: stage_output/
+          if-no-files-found: error
+
+  current_jobs:
+    runs-on: ubuntu-latest
+    timeout-minutes: 70
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [51job, boss]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: |
+          pip install requests beautifulsoup4 pandas openpyxl python-docx pypdf lxml playwright
+          python -m playwright install chromium
+      - run: python research/stage_collect_current_jobs.py --platform ${{ matrix.platform }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: jobs-${{ matrix.platform }}
+          path: stage_output/
+          if-no-files-found: error
+
+  historical_jobs:
+    needs: build_pool
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - uses: actions/download-artifact@v4
+        with:
+          name: pool
+          path: stage_input
+      - run: pip install requests beautifulsoup4 pandas openpyxl python-docx pypdf lxml
+      - run: python research/stage_collect_history.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: history
+          path: stage_output/
+          if-no-files-found: error
+
+  merge:
+    needs: [build_pool, business_verify, current_jobs, historical_jobs]
+    if: always() && needs.build_pool.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: '*'
+          path: stage_input
+          merge-multiple: true
+      - run: pip install requests beautifulsoup4 pandas openpyxl python-docx pypdf lxml
+      - run: python research/stage_merge_results.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: final-company-and-recruitment-audit
+          path: research_output_final/
+          if-no-files-found: error
+          retention-days: 14
