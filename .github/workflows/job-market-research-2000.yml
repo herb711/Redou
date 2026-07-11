@@ -24,7 +24,7 @@ jobs:
       - run: |
           pip install requests beautifulsoup4 pandas openpyxl python-docx pypdf lxml playwright xlrd
           python -m playwright install chromium
-      - run: python research/stage_build_pool_v2.py
+      - run: python research/stage_build_pool_v3.py
       - uses: actions/upload-artifact@v4
         with:
           name: pool
