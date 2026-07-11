@@ -4,9 +4,6 @@ on:
   push:
     branches:
       - research/job-market-2000-20260710
-  pull_request:
-    branches:
-      - main
   workflow_dispatch:
 
 concurrency:
