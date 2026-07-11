@@ -1,13 +1,13 @@
 name: job-market-research-2000
 
 on:
-  push:
+  pull_request:
     branches:
-      - research/job-market-2000-20260710
+      - main
   workflow_dispatch:
 
 concurrency:
-  group: job-market-research-2000
+  group: job-market-research-2000-pr
   cancel-in-progress: true
 
 permissions:
