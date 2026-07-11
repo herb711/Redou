@@ -1,45 +1,13 @@
 name: job-market-research-2000
 
 on:
-  push:
-    branches:
-      - research/job-market-2000-20260710
-  pull_request:
-    branches:
-      - main
   workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
-  research:
+  paused:
     runs-on: ubuntu-latest
-    timeout-minutes: 120
     steps:
-      - name: Checkout temporary research branch
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-
-      - name: Install document, data, and browser parsers
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y antiword
-          python -m pip install --upgrade pip
-          pip install requests beautifulsoup4 openpyxl lxml pandas xlrd python-docx pypdf playwright
-          python -m playwright install chromium
-
-      - name: Rebuild, verify, and match recruitment records
-        run: python research/verify_2059_browser.py
-
-      - name: Upload reproducible research result
-        uses: actions/upload-artifact@v4
-        with:
-          name: cs-job-market-2059-verification
-          path: research_output/
-          if-no-files-found: error
-          retention-days: 7
+      - run: echo "Workflow temporarily paused while sharded research jobs are prepared."
